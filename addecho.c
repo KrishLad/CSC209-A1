@@ -1,29 +1,33 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>  // for optarg to work
+#include <unistd.h> //for optarg to work
+#include "addecho.h"
 
-int main(int argc, char **argv) {
+/**
+Returns delay and volume according to input
+*/
+void *parse_input(int argc, char **argv, int *delay, int *volume) {
 
-    // Get delay and volume_scale and set default values if not provided
     int op;
-    int delay = 8000;
-    int volume_scale = 4;
-    extern int optarg;  // this may cause issues!
     char *end;
 
     while ((op = getopt(argc, argv, "d:v:")) != -1) {
-        switch(op)
-        {
-        case 'd':
-            delay = strtol(optarg, &end, 10);
-
-        case 'v':
-            volume_scale = strtol(optarg, &end, 10);
+        if (op == 100) { // character is d
+            *delay = strtol(optarg, &end, 10);
+        } else if (op == 118) { // character is v
+            *volume = strtol(optarg, &end, 10);
         }
     }
+}
 
-    // Get the names of the files and store them in variables
-    char source_name[strlen(argv[3])];
-    char dest_name[strlen(argv[4])];
+int main(int argc, char **argv) {
+
+    int delay = 8000;
+    int volume = 4;
+    parse_input(argc, argv, &delay, &volume);
+
+    return 0;
+
+    // TAKE FIRST 44 BYTES AND EDIT FILE SIZE
 
 }
