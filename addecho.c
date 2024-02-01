@@ -24,6 +24,7 @@ void parse_input(int argc, char **argv, int *delay, int *volume) {
 
 /*
 Read the 44 bytes in from the header, edit them as necessary, and then put them in the output
+INCOMPLETE
 */
 void edit_header(FILE **input, FILE **output) {
 
@@ -50,7 +51,8 @@ int main(int argc, char **argv) {
     FILE *input = fopen(inputTitle, "rb");
     FILE *output = fopen(outputTitle, "wb");
 
-    //this method call should read the 44 bytes in the header, edit them as necessary, 
+    //this method call should read the 44 bytes in the header, edit them as necessary,
+    // and then put them in the output. INCOMPLETE
     edit_header(&input, &output);
 
     return 0;
