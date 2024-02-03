@@ -6,17 +6,22 @@
 /**
 Returns delay and volume according to input
 */
-void parse_input(int argc, char **argv, int *delay, int *volume) {
+void parse_input(int argc, char **argv, int *delay, int *volume)
+{
 
     int op;
     char *end;
     int D_CONST = 100;
     int V_CONST = 118;
 
-    while ((op = getopt(argc, argv, "d:v:")) != -1) {
-        if (op == D_CONST) { // character is d
+    while ((op = getopt(argc, argv, "d:v:")) != -1)
+    {
+        if (op == D_CONST)
+        { // character is d
             *delay = strtol(optarg, &end, 10);
-        } else if (op == V_CONST) { // character is v
+        }
+        else if (op == V_CONST)
+        { // character is v
             *volume = strtol(optarg, &end, 10);
         }
     }
@@ -26,11 +31,12 @@ void parse_input(int argc, char **argv, int *delay, int *volume) {
 Read the 44 bytes in from the header, edit them as necessary, and then put them in the output
 INCOMPLETE
 */
-void edit_header(FILE **input, FILE **output) {
+void edit_header(FILE **input, FILE **output)
+{
 
-    //put the header into an array of shorts
+    // put the header into an array of shorts
     int HEADER_SHORTS = 22;
-    
+
     short *header_arr = malloc(HEADER_SHORTS * sizeof(short));
     fread(header_arr, sizeof(short), HEADER_SHORTS, *input);
     fwrite(header_arr, sizeof(short), HEADER_SHORTS, *output);
@@ -38,22 +44,48 @@ void edit_header(FILE **input, FILE **output) {
     free(header_arr);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
 
-    //getting values of delay and volume
+    // getting values of delay and volume
     int delay = 8000;
     int volume = 4;
-    parse_input(argc, argv, &delay, &volume);
-    
-    //getting files for input and output
-    char *inputTitle = argv[argc-2];
-    char *outputTitle = argv[argc-1];
-    FILE *input = fopen(inputTitle, "rb");
-    FILE *output = fopen(outputTitle, "wb");
+    int error;
 
-    //this method call should read the 44 bytes in the header, edit them as necessary,
-    // and then put them in the output. INCOMPLETE
-    edit_header(&input, &output);
+    if (argc < 3){
+        fprintf(stderr, "Too few arguments, Usage: %s [-d delay] [-v volume_scale] sourcewav destwav\n", argv[0]);
+    }
+
+    parse_input(argc, argv, &delay, &volume);
+
+    // getting files for input and output
+    char *inputTitle = argv[argc - 2];
+    char *outputTitle = argv[argc - 1];
+    FILE *input = fopen(inputTitle, "rb"); //source 
+    FILE *output = fopen(outputTitle, "wb"); // destination
+
+    
+
+
+    // === Algorithim === 
+    // Step 1: place <delay> amount of the original sound in a buffer
+
+    short echo_buffer[delay]; //stores delay amount of the original sound.
+    error = fread(echo_buffer, delay,1,input); //reads a first delay bytes
+    if (error != 1)
+        fprintf(stderr,"There was an error in reading the input file");
+
+    // Scales all <delay> samples of the file by <volume>
+
+
+    for (int i = 0; i < delay; i++){
+        echo_buffer[i] *= volume;
+    }
+
+    // Step 2a: If you are not at sample <delay> then copy over the sound of the original.
+
+
+
 
     return 0;
 }
