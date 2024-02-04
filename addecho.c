@@ -3,8 +3,9 @@
 #include <unistd.h> //for optarg to work
 #include "addecho.h"
 #define HEADER_SIZE 22
+
 /**
-Returns delay and volume according to input
+    Returns delay and volume according to input
 */
 void parse_input(int argc, char **argv, int *delay, int *volume)
 {
@@ -28,45 +29,40 @@ void parse_input(int argc, char **argv, int *delay, int *volume)
 }
 
 /*
-    Edit the ChunkSize(byte 4 / short 2) and Chunk2Size (byte 40 / short 20) so that it doubles in the output.
+    Edits the 4th and 40th bytes to increase the file size
 */
-void edit_header(FILE **input, FILE **output, int *delay){
-    /*
-        Krishna's note:         
-        This function is a a notable choke point in the program. Since this is where I modify the header file. 
-        If you are currently debugging then and want to know why either
-
-        i) The output file is not working c
-        ii) The size of the output file isn't correct
-        iii) There was a "1" at the end of the file input reading error
-
-        Then check 
-         - The "Write to output file" or "Editing shorts 20 and 2" sections
-         - The "Editing shorts 20 and 2" section
-         - The "Read Input File" section.
-        
-        for the respective issues.
-    */
-    int error; //for error checking 
-    short header[HEADER_SIZE]; //stores the header
+void edit_header(FILE *input, FILE *output, int *delay){
+   
+    int error;  
+    short header[HEADER_SIZE]; 
     unsigned int* sizeptr; 
+
     // == Read input file ==
     error = fread(header, HEADER_SIZE, 1, input); //reads in the header.
     if (error  != 1)
         fprintf(stderr, "There was an error in reading the input file: 1\n");
     
     // == Editing the shorts at 20 and 2 == 
-    sizeptr = (unsigned int *)(header + 2); //points to byte 2
-    sizeptr[0] += *delay * 2;
-    sizeptr += 9; // now points to byte 20 
-    sizeptr[0] += *delay *2; 
-    
+    sizeptr = (unsigned int *)(header + 2); 
+    *sizeptr += (*delay * 2);
+
+    sizeptr = (unsigned int *)(header + 20);
+    *sizeptr += (*delay * 2);
+
     // == Write to output file ==
-    int error = fwrite(header,HEADER_SIZE,1,output);
+    error = fwrite(header,HEADER_SIZE, 1, output);
     if (error != 1)
         fprintf(stderr, "Could not write to file :1\n");
 }
+
+/*
+    Prints out headers before and after modification to see if edit_header worked
+*/
+void helper(FILE * input, FILE *output) {}
+
 int main(int argc, char **argv){
+
+    // ===Input Parsing ===
 
     // getting values of delay and volume
     int delay = 8000;
@@ -83,18 +79,14 @@ int main(int argc, char **argv){
     char *inputTitle = argv[argc - 2];
     char *outputTitle = argv[argc - 1];
     FILE *input = fopen(inputTitle, "rb"); //source 
-    if (input == NULL) // check if file is ever not found
+    if (input == NULL) 
         fprintf(stderr, "File not found\n");
     FILE *output = fopen(outputTitle, "wb"); // destination
 
+    // === Editing Header ===
+
+    edit_header(input, output, &delay); 
     
-    /*
-        Krishna's Note:
-        This edit_header will advance the pointer forward for both input and output so that they are now pointing to after the header.
-    */
-
-    edit_header(input, output, &delay); //Edit the header so it increases in size. 
-
     // === Algorithim === 
     // Step 1: place <delay> amount of the original sound in a buffer
 
@@ -111,9 +103,6 @@ int main(int argc, char **argv){
     }
 
     // Step 2a: If you are not at sample <delay> then copy over the sound of the original.
-
-
-
 
     return 0;
 }
