@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include<stdint.h> // for uint32
 #include <unistd.h> //for optarg to work
+#include <getopt.h>
 #include "addecho.h"
 #define HEADER_SIZE 44
 #define SIZE_OFFSET 40
