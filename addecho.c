@@ -1,17 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include<stdint.h> // for uint32
 #include <unistd.h> //for optarg to work
 #include "addecho.h"
-#define HEADER_SIZE 22
+#define HEADER_SIZE 44
+#define SIZE_OFFSET 40
 
 
-/* //!! There is a serious issue present. Our header file isn't even bing read correctly. For some odd reason, this is very bad. I will look into it more.
-*/
-
-
-
-
-void printArray(short arr[], int size) // !! Remove this when done.
+void printArray(short arr[], int size) 
 {
     printf("[");
     for (int i = 0; i < size; i++)
@@ -37,6 +33,7 @@ void parse_input(int argc, char **argv, int *delay, int *volume)
 
     while ((op = getopt(argc, argv, "d:v:")) != -1)
     {
+        // check for optarg
         if (op == D_CONST)
         { // character is d
             *delay = strtol(optarg, &end, 10);
@@ -51,7 +48,7 @@ void parse_input(int argc, char **argv, int *delay, int *volume)
 /*
     Edits the 4th and 40th bytes to increase the file size
 */
-void edit_header(FILE *input, FILE *output, int *delay, int *datasize){
+void edit_header(FILE *input, FILE *output, int delay){
    
     int error;  
     short header[HEADER_SIZE];
@@ -64,17 +61,20 @@ void edit_header(FILE *input, FILE *output, int *delay, int *datasize){
         exit(1);
     }
 
-    printArray(header,HEADER_SIZE);
-
     // == Editing the shorts at 20 and 2 ==
     sizeptr = (unsigned int *)(header + 2);
-    
+    sizeptr[0] += delay * 2;
+    sizeptr = (unsigned int *)(header + 20);
+    sizeptr[0] += delay * 2;
     // == Write to output file ==
     error = fwrite(header,HEADER_SIZE, 1, output);
     if (error != 1){
         fprintf(stderr, "Could not write to file :1\n");
         exit(1);
     }
+
+
+
 }
 
 
@@ -86,7 +86,6 @@ int main(int argc, char **argv){
     int delay = 8000;
     int volume = 4;
     int error;
-    int sizeOfData;
     if (argc < 3){
         fprintf(stderr, "Too few arguments, Usage: %s [-d delay] [-v volume_scale] sourcewav destwav\n", argv[0]);
         exit(1);
@@ -104,8 +103,8 @@ int main(int argc, char **argv){
 
     // === Editing Header ===
 
-    edit_header(input, output, &delay,&sizeOfData); 
-    fseek(input, 44, SEEK_SET); // sets the pointer to be after header
+    edit_header(input, output, delay); 
+    fseek(input, HEADER_SIZE, SEEK_SET); // sets the pointer to be after header
     // === Algorithim === 
     // Step 1: place <delay> amount of the original sound in a buffer
 
@@ -143,18 +142,18 @@ int main(int argc, char **argv){
         index = (index + 1) % delay; // To wrap around.
     }
 
-    // //Step 3 : Write 0 samples
-    // int x = delay - sizeOfData;
-    // if (x > 0){
-    //     for (int i = 0; i < x; i ++ ){
-    //         short zero_sample = 0;
-    //         error = fwrite(&zero_sample, sizeof(short), 1, output);
-    //         if (error != 1){
-    //             fprintf(stderr, "There was an error in writing to the output file: 4\n");
-    //             exit(1);
-    //         }
-    //     }
-    // }
+    //Step 3 : Write 0 samples
+    fseek(input, SIZE_OFFSET, SEEK_SET);
+    uint32_t data_chunk_size;
+    fread(&data_chunk_size,sizeof(uint32_t),1,input);
+    fseek(input, 0, SEEK_END);
+    int x = delay - data_chunk_size;
+    if (x > 0){
+        for (int i=0; i < x; i++){
+            short zero = 0;
+            fwrite(&zero, sizeof(short), 1, output);
+        }
+    }
     //Step 4: Clear out the echo buffer samples
     for (int i = 0; i < delay; i++){
         short array_element = echo_buffer[i]; 
