@@ -237,18 +237,27 @@ int main(int argc, char **argv){
     // }
 
     //Step 4: Clear out the echo buffer samples
-    // if (shorts_left > 0) {
-    //     for (int i = 0; i < shorts_left; i++) {
-    //         echo_buffer[i] = original_sound[i] / volume;
-    //     }
-    //     // for (int i = shorts_left; i < delay; i++) {
-    //     //     echo_buffer[i] = 0;
-    //     // }
-    //     error = fwrite(echo_buffer, sizeof(short), delay, output);
-    //     if (error != delay) {
-    //         fprintf(stderr, "Could not write to file OOGA BOOGA\n");
-    //         exit(1);
-    //     }
+    if (shorts_left > 0) {
+        int i = shorts_left;
+        int j = 0;
+        while (j < delay) {
+            echo_buffer[i] = original_sound[i]/volume;
+
+            i = (i+1) % delay;
+            j += 1;
+        }
+
+        // for (int i = 0; i < shorts_left; i++) {
+        //     echo_buffer[i] = original_sound[i] / volume;
+        // }
+        // for (int i = shorts_left; i < delay; i++) {
+        //     echo_buffer[i] = 0;
+        // }
+        error = fwrite(echo_buffer, sizeof(short), delay, output);
+        if (error != delay) {
+            fprintf(stderr, "Could not write to file OOGA BOOGA\n");
+            exit(1);
+        }
     // }
     //fwrite(echo_buffer, sizeof(short), delay, output);
 
