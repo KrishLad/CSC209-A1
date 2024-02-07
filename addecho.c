@@ -245,7 +245,7 @@ int main(int argc, char **argv){
     // === Clean up === 
     free(echo_buffer);
     free(original_sound);
-
+    free(sample);
     fclose(input);
     fclose(output);
 
