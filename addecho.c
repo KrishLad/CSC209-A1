@@ -130,23 +130,40 @@ int main(int argc, char **argv){
     }
     // we are now at sample <delay> (and both the files are sync'd)
     // Step 2b: Start mixing in the buffer.
-    short sample; // variable to store the current sample read from the input file
-    int index = 0; // index to keep track of the position in the echo buffer
-    while(fread(&sample, sizeof(short), 1, input) == 1){
-        short mixed = sample + echo_buffer[index]; // Mix the sample and the echo buffer together
-        echo_buffer[index] = sample / volume; //replace the current position of the echo buffer with the current sample scaled to volume.
-        error = fwrite(&mixed, sizeof(short),1,output); //write to the file.
-        if (error != 1){
-            fprintf(stderr, "There was an error in writing to the output file: 3\n");
-            exit(1);
-        } 
-        index = (index + 1) % delay; // To wrap around.
+    short *sample  = malloc(sizeof(short) * delay); // variable to store the current sample read from the input file
+    int bytes_left;
+    while( (bytes_left = fread(sample, sizeof(short), delay, input)) == delay){
+        // Mix them together.
+        for (int i =0; i < delay; i++){
+            short value = sample[i]; 
+            sample[i] += echo_buffer[i];
+            echo_buffer[i] = value / volume; 
+        }
+        
+           for (int i =0; i < delay; i++){
+            //add error checking later 
+            fwrite(&sample[i],sizeof(short),1,output);
+        }
+        
+    }
+
+    if (bytes_left > 0){ //if we have bytes remaing to read
+        for(int i = 0; i < bytes_left; i++) { //captures them into an array and does the usual sample addtion
+            short value = sample[i]; 
+            sample[i] += echo_buffer[i];
+            echo_buffer[i] = value / volume;
+        }
+
+        for (int i = 0; i < bytes_left; i++){ 
+            //!! Add error checking.
+           fwrite(&sample[i],sizeof(short),1,output);
+        }
     }
 
     //Step 3 : Write 0 samples
     fseek(input, SIZE_OFFSET, SEEK_SET);
-    uint32_t data_chunk_size;
-    fread(&data_chunk_size,sizeof(uint32_t),1,input);
+    int data_chunk_size;
+    fread(&data_chunk_size,sizeof(int),1,input);
     fseek(input, 0, SEEK_END);
     int x = delay - data_chunk_size;
     if (x > 0){
