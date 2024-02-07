@@ -4,6 +4,7 @@
 #include <unistd.h> //for optarg to work
 #include <getopt.h>
 #include "addecho.h"
+#include <errno.h>
 #define HEADER_SIZE 44
 #define SIZE_OFFSET 40
 
@@ -21,6 +22,7 @@ void printArray(short arr[], int size)
     }
     printf("]\n");
 }
+
 /**
     Returns delay and volume according to input
 */
@@ -33,16 +35,23 @@ void parse_input(int argc, char **argv, int *delay, int *volume)
     int V_CONST = 118;
 
     while ((op = getopt(argc, argv, "d:v:")) != -1)
-    {
+    {   errno = 0;
         // check for optarg
         if (op == D_CONST)
         { // character is d
             *delay = strtol(optarg, &end, 10);
+            if (errno != 0) {
+                printf("Invalid optional argument types")
+            }
         }
         else if (op == V_CONST)
         { // character is v
             *volume = strtol(optarg, &end, 10);
+            if (errno != 0) {
+                printf("Invalid optional argument types")
+            }
         }
+
     }
 }
 
