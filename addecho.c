@@ -96,13 +96,16 @@ void print_file(FILE *file_name) {
     }
     printf(" ]\n");
     printf("NUMBERS:\n");
+
+    int c;
     while (!feof(file_name)) {
         fread(&sample, sizeof(short), 1, file_name);
         if (!feof(file_name)) {
             printf("%u\n", sample);
+            c+= 1;
         }
-        
     }
+    printf("FILE SIZE : %d\n", c);
 
 }
 
@@ -153,7 +156,7 @@ int main(int argc, char **argv){
     short *echo_buffer = malloc(sizeof(short) * delay); // has the echo scaled by <volume>
     short  *original_sound = malloc(sizeof(short) * delay);//stores delay amount of the original sound.
 
-    int count;
+    int count = 0;
     fseek(input, 44, SEEK_SET);
     count_samples(input, &count);
     fseek(input, 44, SEEK_SET);
@@ -163,7 +166,7 @@ int main(int argc, char **argv){
     if (count < delay) {
         error = fread(original_sound, sizeof(short), count, input);
         if (error != count) {
-            fprintf(stderr, "There was an error in reading the input file \n");
+            fprintf(stderr, "There was an error in reading the input file\n");
             exit(1);
         }
     } else {
@@ -190,62 +193,69 @@ int main(int argc, char **argv){
 
     // Step 2b: Start mixing in the buffer.
 
-    short *sample  = malloc(sizeof(short) * delay); // variable to store the current sample read from the input file
-    int bytes_left;
-    while( (bytes_left = fread(sample, sizeof(short), delay, input)) == delay){
-        printf("bytes left: %d\n", bytes_left);
-
+    int shorts_left;
+    short sample;
+    while( (shorts_left = fread(original_sound, sizeof(short), delay, input)) == delay){
+        printf("shorts left currently : %d", shorts_left);
         // Mix them together.
-        for (int i =0; i < delay; i++){
-            short value = sample[i]; 
-            sample[i] += echo_buffer[i];
-            echo_buffer[i] = value / volume; 
+        for (int i =0; i < delay; i++) {
+            //at this point original sound has been updates but echo buffer has not
+            sample = original_sound[i] + echo_buffer[i];
+            error = fwrite(&sample, sizeof(short), 1, output);    
+            if (error != 1) {
+                fprintf(stderr, "Could not write to file\n");
+                exit(1);
+            }
+            //now updating the echo buffer
+            echo_buffer[i] = original_sound[i] / volume;
         }
-        
-        for (int i =0; i < delay; i++){
-            //add error checking later 
-            fwrite(&sample[i],sizeof(short),1,output);
-        }
-        
     }
 
-    if (bytes_left > 0){ //if we have bytes remaing to read
-        for(int i = 0; i < bytes_left; i++) { //captures them into an array and does the usual sample addtion
-            short value = sample[i]; 
-            sample[i] += echo_buffer[i];
-            echo_buffer[i] = value / volume;
-        }
+    //at this point, echo buffer holds the echo for 12000 bytes. we dont want to lose that. 
+    //original sound holds 8512 bytes. we dont want to lose that. 
 
-        for (int i = 0; i < bytes_left; i++){ 
-            //!! Add error checking.
-           fwrite(&sample[i],sizeof(short),1,output);
+    short *samples = malloc(shorts_left * sizeof(short));
+    if (shorts_left > 0){ //if we have bytes remaing to read
+        printf("short left now: %d", shorts_left);
+        for(int i = 0; i < shorts_left; i++) { 
+            samples[i] = original_sound[i] + echo_buffer[i];
         }
+        fwrite(samples, sizeof(short), shorts_left, output);
     }
 
     //Step 3 : Write 0 samples
-    fseek(input, 40, SEEK_SET);
-    int data_chunk_size;
-    fread(&data_chunk_size,sizeof(int),1,input);
-    fseek(input, 0, SEEK_END);                          // QUESTION from zoya : why do we do this?
-    int x = delay - data_chunk_size;
-    if (x > 0){
-        for (int i=0; i < x; i++){
-            short zero = 0;
-            fwrite(&zero, sizeof(short), 1, output);
-        }
-    }
-    
+    // fseek(input, 40, SEEK_SET);
+    // int data_chunk_size;
+    // fread(&data_chunk_size,sizeof(int),1,input);
+    // fseek(input, 0, SEEK_END);                          
+    // int x = delay - data_chunk_size;
+    // if (x > 0){
+    //     for (int i=0; i < x; i++){
+    //         short zero = 0;
+    //         fwrite(&zero, sizeof(short), 1, output);
+    //     }
+    // }
+
     //Step 4: Clear out the echo buffer samples
-    error = fwrite(echo_buffer, sizeof(short), delay, output);
-    if (error != delay) {
-        fprintf(stderr, "Could not write to file :1\n");
-        exit(1);
-    }
+    // if (shorts_left > 0) {
+    //     for (int i = 0; i < shorts_left; i++) {
+    //         echo_buffer[i] = original_sound[i] / volume;
+    //     }
+    //     // for (int i = shorts_left; i < delay; i++) {
+    //     //     echo_buffer[i] = 0;
+    //     // }
+    //     error = fwrite(echo_buffer, sizeof(short), delay, output);
+    //     if (error != delay) {
+    //         fprintf(stderr, "Could not write to file OOGA BOOGA\n");
+    //         exit(1);
+    //     }
+    // }
+    //fwrite(echo_buffer, sizeof(short), delay, output);
 
     // === Clean up === 
     free(echo_buffer);
     free(original_sound);
-    free(sample);
+
     fclose(input);
     fclose(output);
 
@@ -253,8 +263,8 @@ int main(int argc, char **argv){
     FILE *new_input = fopen(inputTitle, "rb");
     FILE *new_output = fopen(outputTitle, "rb");
     
-    print_file(new_input);
-    print_file(new_output);
+    //print_file(new_input);
+    //print_file(new_output);
 
     fclose(new_input);
     fclose(new_output);
