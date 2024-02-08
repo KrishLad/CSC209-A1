@@ -1,0 +1,35 @@
+
+--- BASIC TESTS ---
+
+gcc -Wall -Werror addecho.c -o addecho
+./addecho -d 3 -v 2 short.wav new_short.wav
+cmp new_short.wav short_3_2.wav
+./addecho -d 12000 -v 2 door.wav door1.wav
+cmp door1.wav door_12000_2.wav
+./addecho -d 12000 -v 4 door.wav door2.wav
+cmp door2.wav door_12000_4.wav
+./addecho -d 20000 -v 4 door.wav door3.wav
+cmp door3.wav door_20000_4.wav
+./addecho -d 35000 -v 2 door.wav door4.wav
+cmp door4.wav door_35000_2.wav
+./addecho -d 60000 -v 1 door.wav door5.wav
+cmp door5.wav door_60000_1.wav
+
+--- INPUT RELATED TESTS ---
+these tests should just run without crashing
+
+1: one param missing argument
+./addecho -d -v 10 door.wav door6.wav
+./addecho -d 1000 -v door.wav door7.wav
+./addecho -d door.wav door8.wav
+./addecho -v door.wav door9.wav
+
+2: both params missing argument
+./addecho -d -v door.wav door10.wav
+
+3: same params twice
+./addecho -d 1000 -d 2000 door.wav door11.wav
+./addecho -v 4 -v 5 door.wav door12.wav
+
+4: same input and output file name
+./addecho door_copy.wav door_copy.wav
