@@ -25,6 +25,7 @@ void parse_input(int argc, char **argv, int *delay, int *volume)
             *delay = strtol(optarg, &end, 10);
             if (errno != 0) {
                 printf("Invalid optional argument types");
+                exit(1);
             }
         }
         else if (op == V_CONST)
@@ -32,6 +33,7 @@ void parse_input(int argc, char **argv, int *delay, int *volume)
             *volume = strtol(optarg, &end, 10);
             if (errno != 0) {
                 printf("Invalid optional argument types");
+                exit(1);
             }
         }
 
@@ -115,7 +117,7 @@ int main(int argc, char **argv){
     FILE *input = fopen(inputTitle, "rb"); //source 
     if (input == NULL) {
         fprintf(stderr, "File not found\n");
-        exit(1);
+        exit(2);
     }
     FILE *output = fopen(outputTitle, "wb"); // destination
 
@@ -132,8 +134,15 @@ int main(int argc, char **argv){
     // Step 1: place <delay> amount of the original sound in a buffer
 
     short *echo_buffer = malloc(sizeof(short) * delay); // has the echo scaled by <volume>
+    if (echo_buffer == NULL){
+        fprintf(stderr, "Memory Allocation Error.\n");
+        exit(3);
+    }
     short  *original_sound = malloc(sizeof(short) * delay);//stores delay amount of the original sound.
-
+    if (original_sound == NULL){
+        fprintf(stderr, "Memory Allocation Error.\n");
+        exit(3);
+    }
     // Step 2a: If you are not at sample <delay> then copy over the sound of the original.
 
     int file_size;
@@ -143,7 +152,7 @@ int main(int argc, char **argv){
         error = fwrite(original_sound, sizeof(short), file_size, output);
         if (error != file_size) {
             fprintf(stderr, "Could not write to the file\n");
-            exit(1);
+            exit(2);
         }
 
         //scales everything in original sound and places it in an echo buffer
@@ -154,7 +163,7 @@ int main(int argc, char **argv){
         error = fwrite(original_sound, sizeof(short), delay, output);
         if (error != delay) {
             fprintf(stderr, "Could not write to the file\n");
-            exit(1);
+            exit(2);
         }
 
         //scales everything in original sound and places it in an echo buffer
@@ -177,7 +186,7 @@ int main(int argc, char **argv){
             error = fwrite(&sample, sizeof(short), 1, output);    
             if (error != 1) {
                 fprintf(stderr, "Could not write to file\n");
-                exit(1);
+                exit(2);
             }
             //now updating the echo buffer
             echo_buffer[i] = original_sound[i] / volume;
@@ -185,6 +194,10 @@ int main(int argc, char **argv){
     }
 
     short *samples = malloc(shorts_left * sizeof(short));
+    if (samples == NULL){
+        fprintf(stderr, "Memory Allocation Error.\n");
+        exit(3);
+    }
     if (shorts_left > 0){ //if we have bytes remaing to read
         for(int i = 0; i < shorts_left; i++) { 
             samples[i] = original_sound[i] + echo_buffer[i];
