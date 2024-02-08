@@ -33,3 +33,6 @@ these tests should just run without crashing
 
 4: same input and output file name
 ./addecho door_copy.wav door_copy.wav
+
+--- FILE RELATED TESTS ---
+./addecho short.wav new_short2.wav      --> this is technically a redundant test bc of 4th and 5th door test
