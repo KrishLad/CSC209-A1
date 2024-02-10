@@ -34,7 +34,6 @@ int main(int argc, char **argv){
         return 1;
     }
 
-
     // ==== Remove Vocals Algo ====
     // Step 1: Copy over header from sourcewav
     fread(header, HEADER_SIZE, 1, sourcewav);
@@ -45,7 +44,8 @@ int main(int argc, char **argv){
         return 1;
     }
     //Step 2: Rest are 2 byte shorts, take each pair and get the difference over 2
-    while(fread(samples, sizeof(short), 2, sourcewav) == 2){
+    int num_read;
+    while(num_read = fread(samples, sizeof(short), 2, sourcewav) == 2){
         combined = (samples[0] - samples[1])/2;
         error = fwrite(&combined,sizeof(short),1,destwav); //ask Rutwa for a better way.
         if (error != 1){
@@ -60,6 +60,12 @@ int main(int argc, char **argv){
             return 1;
         }
     }
+
+    if (num_read == 1) {
+        combined = samples[0] / 2;
+        fwrite(&combined, sizeof(short), 1, output);
+    }
+    
     // === Closing the files === 
     error = fclose(sourcewav);
     if (error != 0){
