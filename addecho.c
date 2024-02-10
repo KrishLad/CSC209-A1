@@ -51,7 +51,7 @@ void edit_header(FILE *input, FILE *output, int delay){
     error = fread(header, sizeof(short), HEADER_SIZE, input); //reads in the header.
     if (error  != HEADER_SIZE){
         fprintf(stderr, "There was an error in reading the input file\n");
-        exit(1);
+        exit(2);
     }
 
     // == Editing the shorts at 20 and 2 ==
@@ -64,7 +64,7 @@ void edit_header(FILE *input, FILE *output, int delay){
     error = fwrite(header, sizeof(short), HEADER_SIZE, output);
     if (error != HEADER_SIZE){
         fprintf(stderr, "Could not write to file :1\n");
-        exit(1);
+        exit(2);
     }
 
 }
@@ -76,7 +76,11 @@ void count_samples(FILE *input, int *count) {
     fseek(input, 44, SEEK_SET);
     short sample;
     while (!feof(input)) {
-        fread(&sample, sizeof(short), 1, input);
+        error = fread(&sample, sizeof(short), 1, input);
+        if (error != 1) {
+            fprintf(stderr, "Could not write to file\n");
+            exit(2);
+        }
         if (!feof(input)) {
             *count += 1;
         }
@@ -113,15 +117,19 @@ int main(int argc, char **argv){
     //error checking
     if (inputTitle == outputTitle) {
         fprintf(stderr, "Input and output file must be different files.");
-        exit(1);
+        exit(2);
     }
 
     FILE *input = fopen(inputTitle, "rb"); //source 
     if (input == NULL) {
         fprintf(stderr, "File not found\n");
-        exit(1);
+        exit(2);
     }
     FILE *output = fopen(outputTitle, "wb"); // destination
+    if (output == NULL) {
+        fprintf(stderr, "File unable to be opened\n");
+        exit(2);
+    }
 
     // === Editing Header ===
 
@@ -147,7 +155,7 @@ int main(int argc, char **argv){
         error = fwrite(original_sound, sizeof(short), file_size, output);
         if (error != file_size) {
             fprintf(stderr, "Could not write to the file\n");
-            exit(1);
+            exit(2);
         }
 
         //scales everything in original sound and places it in an echo buffer
@@ -158,7 +166,7 @@ int main(int argc, char **argv){
         error = fwrite(original_sound, sizeof(short), delay, output);
         if (error != delay) {
             fprintf(stderr, "Could not write to the file\n");
-            exit(1);
+            exit(2);
         }
 
         //scales everything in original sound and places it in an echo buffer
@@ -181,7 +189,7 @@ int main(int argc, char **argv){
             error = fwrite(&sample, sizeof(short), 1, output);    
             if (error != 1) {
                 fprintf(stderr, "Could not write to file\n");
-                exit(1);
+                exit(2);
             }
             //now updating the echo buffer
             echo_buffer[i] = original_sound[i] / volume;
@@ -193,7 +201,11 @@ int main(int argc, char **argv){
         for(int i = 0; i < shorts_left; i++) { 
             samples[i] = original_sound[i] + echo_buffer[i];
         }
-        fwrite(samples, sizeof(short), shorts_left, output);
+        error = fwrite(samples, sizeof(short), shorts_left, output);
+        if (error != shorts_left) {
+            fprintf(stderr, "Could not write to file\n");
+            exit(2);
+        }
     }
 
     //Step 3 : Write 0 samples and Step 4: Clear out the echo buffer samples         
@@ -201,16 +213,32 @@ int main(int argc, char **argv){
     short ZERO = 0;
     if (x > 0){
         for (int i = count; i < delay; i++){
-            fwrite(&ZERO, sizeof(short), 1, output);
+            error = fwrite(&ZERO, sizeof(short), 1, output);
+            if (error != 1) {
+                fprintf(stderr, "Could not write to file\n");
+                exit(2);
+            }
         }
-        fwrite(echo_buffer, sizeof(short), count, output);
+        error = fwrite(echo_buffer, sizeof(short), count, output);
+        if (error != count) {
+                fprintf(stderr, "Could not write to file\n");
+                exit(2);
+        }
     } else {
         for (int i = shorts_left; i < delay; i++) {
-            fwrite(&echo_buffer[i], sizeof(short), 1, output);
+            error = fwrite(&echo_buffer[i], sizeof(short), 1, output);
+            if (error != 1) {
+                fprintf(stderr, "Could not write to file\n");
+                exit(2);
+            }
         }
         for (int i = 0; i < shorts_left; i++) {
             echo_buffer[i] = original_sound[i] / volume;
-            fwrite(&echo_buffer[i], sizeof(short), 1, output);
+            error = fwrite(&echo_buffer[i], sizeof(short), 1, output);
+            if (error != 1) {
+                fprintf(stderr, "Could not write to file\n");
+                exit(2);
+            }
         }
     }
 
@@ -219,8 +247,16 @@ int main(int argc, char **argv){
     free(original_sound);
     free(samples);
 
-    fclose(input);
-    fclose(output);
+    error = fclose(input);
+    if (error != 0) {
+        printf("File failed to close correctly.\n");
+        exit(1);
+    }
+    error = fclose(output);
+    if (error != 0) {
+        printf("File failed to close correctly.\n");
+        exit(1);
+    }
 
     return 0;
 }
