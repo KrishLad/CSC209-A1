@@ -24,14 +24,20 @@ these tests should just run without crashing
 ./addecho -d door.wav door8.wav
 ./addecho -v door.wav door9.wav
 
-2: both params missing argument
-./addecho -d -v door.wav door10.wav
-
-3: same params twice
+2: same params twice
 ./addecho -d 1000 -d 2000 door.wav door11.wav
 ./addecho -v 4 -v 5 door.wav door12.wav
 
-4: same input and output file name
+3: same input and output file name
 ./addecho door_copy.wav door_copy.wav
 
---- FILE RELATED TESTS ---
+--- DELAY RELATED TESTS ---
+
+1: create a copy of the file || NEED TO FIGURE OUT THIS ONE ||
+./addecho -d 0 -v 1 door.wav door_copy.wav
+
+2: delay is the same as number of bytes in the file
+./addecho -d 32512 -v 2 door.wav door13.wav
+
+3: test on an empty file - should just produce another empty file
+./addecho empty.wav empty2.wav

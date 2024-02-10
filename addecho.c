@@ -4,6 +4,8 @@
 #include <getopt.h>
 #include <errno.h>
 #define HEADER_SIZE 22
+#define D_CONST 100
+#define V_CONST 118
 
 
 /**
@@ -14,8 +16,6 @@ void parse_input(int argc, char **argv, int *delay, int *volume)
 
     int op;
     char *end;
-    int D_CONST = 100;
-    int V_CONST = 118;
 
     while ((op = getopt(argc, argv, "d:v:")) != -1)
     {   errno = 0;
@@ -25,6 +25,7 @@ void parse_input(int argc, char **argv, int *delay, int *volume)
             *delay = strtol(optarg, &end, 10);
             if (errno != 0) {
                 printf("Invalid optional argument types");
+                exit(1);
             }
         }
         else if (op == V_CONST)
@@ -32,6 +33,7 @@ void parse_input(int argc, char **argv, int *delay, int *volume)
             *volume = strtol(optarg, &end, 10);
             if (errno != 0) {
                 printf("Invalid optional argument types");
+                exit(1);
             }
         }
 
@@ -63,7 +65,7 @@ void edit_header(FILE *input, FILE *output, int delay){
     // == Write to output file ==
     error = fwrite(header, sizeof(short), HEADER_SIZE, output);
     if (error != HEADER_SIZE){
-        fprintf(stderr, "Could not write to file :1\n");
+        fprintf(stderr, "Could not write to file\n");
         exit(2);
     }
 
@@ -78,11 +80,7 @@ void count_samples(FILE *input, int *count) {
     int error;
     
     while (!feof(input)) {
-        error = fread(&sample, sizeof(short), 1, input);
-        if (error != 1) {
-            fprintf(stderr, "Could not write to file\n");
-            exit(2);
-        }
+        fread(&sample, sizeof(short), 1, input);
         if (!feof(input)) {
             *count += 1;
         }
@@ -101,14 +99,17 @@ int main(int argc, char **argv){
     if (argc < 3){
         fprintf(stderr, "Too few arguments, Usage: %s [-d delay] [-v volume_scale] sourcewav destwav\n", argv[0]);
         exit(1);
-    } else if (argc > 3 && (argc != 5 || argc != 7)) {
+    } else if (argc > 3 && argc < 5) {
+        fprintf(stderr, "Too few arguments, Usage: %s [-d delay] [-v volume_scale] sourcewav destwav\n", argv[0]);
+        exit(1);
+    } else if (argc > 5 && argc < 7) {
         fprintf(stderr, "Too few arguments, Usage: %s [-d delay] [-v volume_scale] sourcewav destwav\n", argv[0]);
         exit(1);
     } 
     else if (argc > 7) {
         fprintf(stderr, "Too many arguments, Usage: %s [-d delay] [-v volume_scale] sourcewav destwav\n", argv[0]);
         exit(1);
-    }
+    } 
 
     // getting values of delay and volume
     parse_input(argc, argv, &delay, &volume);
