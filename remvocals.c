@@ -49,7 +49,7 @@ int main(int argc, char **argv){
         combined = (samples[0] - samples[1])/2;
         error = fwrite(&combined,sizeof(short),1,destwav); //ask Rutwa for a better way.
         if (error != 1){
-            fprintf(stderr, "Error: could not write a left sample\n");
+            fprintf(stderr, "Error: could not write a right sample\n");
             return 1;
         }
         //write it twice.
