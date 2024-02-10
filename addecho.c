@@ -114,6 +114,11 @@ int main(int argc, char **argv){
     // getting values of delay and volume
     parse_input(argc, argv, &delay, &volume);
 
+    if (delay == 0) {
+        printf("Delay must be greater than 0 and an argument must be passed after -d.\n");
+        exit(1);
+    }
+
     // getting files for input and output
     char *inputTitle = argv[argc - 2];
     char *outputTitle = argv[argc - 1];
