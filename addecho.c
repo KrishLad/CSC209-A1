@@ -75,6 +75,8 @@ void edit_header(FILE *input, FILE *output, int delay){
 void count_samples(FILE *input, int *count) {
     fseek(input, 44, SEEK_SET);
     short sample;
+    int error;
+    
     while (!feof(input)) {
         error = fread(&sample, sizeof(short), 1, input);
         if (error != 1) {
