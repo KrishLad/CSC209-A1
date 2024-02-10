@@ -46,7 +46,7 @@ int main(int argc, char **argv){
     //Step 2: Rest are 2 byte shorts, take each pair and get the difference over 2
     int num_read;
     while(num_read = fread(samples, sizeof(short), 2, sourcewav) == 2){
-        combined = (samples[0] - samples[1])/2;
+        combined = (samples[1] - samples[0])/2;
         error = fwrite(&combined,sizeof(short),1,destwav); //ask Rutwa for a better way.
         if (error != 1){
             fprintf(stderr, "Error: could not write a right sample\n");
@@ -65,7 +65,7 @@ int main(int argc, char **argv){
         combined = samples[0] / 2;
         fwrite(&combined, sizeof(short), 1, output);
     }
-    
+
     // === Closing the files === 
     error = fclose(sourcewav);
     if (error != 0){
