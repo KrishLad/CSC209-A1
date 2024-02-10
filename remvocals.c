@@ -62,6 +62,8 @@ int main(int argc, char **argv){
     }
 
     if (num_read == 1) {
+        fseek(sourcewav, 1, SEEK_END);
+        fread(samples, sizeof(short), 1, input);
         combined = samples[0] / 2;
         fwrite(&combined, sizeof(short), 1, output);
     }
